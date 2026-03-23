@@ -22,7 +22,7 @@ export function QuickQuestions({ onSelect }: Props) {
         .limit(4);
       
       if (data && data.length > 0) {
-        return data.map(d => d.question);
+        return (data as any[]).map(d => d.question);
       }
 
       return [

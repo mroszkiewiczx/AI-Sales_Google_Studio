@@ -113,7 +113,7 @@ export function useContentGenerations() {
   return useQuery({
     queryKey: ['content-generations', currentWorkspace?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('content_generations')
         .select('*')
         .eq('workspace_id', currentWorkspace!.id)
@@ -133,7 +133,7 @@ export function useContentSettings() {
   const query = useQuery({
     queryKey: ['content-settings', currentWorkspace?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('content_settings')
         .select('*')
         .eq('workspace_id', currentWorkspace!.id)
@@ -146,9 +146,9 @@ export function useContentSettings() {
 
   const updateSettings = useMutation({
     mutationFn: async (settings: Partial<ContentSettings>) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('content_settings')
-        .upsert({ ...settings, workspace_id: currentWorkspace!.id })
+        .upsert({ ...settings, workspace_id: currentWorkspace!.id }, { onConflict: 'workspace_id' })
         .select()
         .single();
       if (error) throw error;

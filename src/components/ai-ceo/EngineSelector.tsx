@@ -33,7 +33,7 @@ export function EngineSelector({ value, onChange }: Props) {
     enabled: !!currentWorkspace?.id,
   });
 
-  const activeProviders = activeCreds?.map(c => c.provider) || [];
+  const activeProviders = (activeCreds as any[])?.map(c => c.provider) || [];
   
   // Zawsze pokazujemy openrouter
   const availableProviders = ["openrouter", ...activeProviders.filter(p => ENGINE_MODEL_MAP[p])];

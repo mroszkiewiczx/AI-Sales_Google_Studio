@@ -9,10 +9,13 @@ export function useRecording() {
   const startRecording = useCallback(async () => {
     setError(null);
     try {
-      // Request microphone access first
-      await navigator.mediaDevices.getUserMedia({ audio: true });
+      // 1. Request microphone access explicitly BEFORE initializing SpeechRecognition
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      // Stop the stream immediately, we just needed the permission
+      stream.getTracks().forEach(track => track.stop());
 
-      // Initialize SpeechRecognition
+      // 2. Initialize SpeechRecognition
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       if (!SpeechRecognition) {
         throw new Error("Speech recognition not supported in this browser.");
@@ -33,7 +36,16 @@ export function useRecording() {
 
       recognition.onerror = (event: any) => {
         console.error("Speech recognition error:", event.error);
-        setError(event.error);
+        
+        // Map specific errors to user-friendly messages
+        if (event.error === 'not-allowed') {
+          setError("Brak dostępu do mikrofonu. Sprawdź ustawienia przeglądarki.");
+        } else if (event.error === 'no-speech') {
+          setError("Nie wykryto mowy. Spróbuj ponownie.");
+        } else {
+          setError(`Błąd rozpoznawania mowy: ${event.error}`);
+        }
+        
         setIsRecording(false);
       };
 
@@ -46,7 +58,15 @@ export function useRecording() {
       setIsRecording(true);
     } catch (err: any) {
       console.error("Failed to start recording:", err);
-      setError(err.name || "UnknownError");
+      
+      if (err.name === 'NotAllowedError') {
+        setError("Brak dostępu do mikrofonu. Sprawdź ustawienia przeglądarki.");
+      } else if (err.name === 'NotFoundError') {
+        setError("Nie znaleziono mikrofonu.");
+      } else {
+        setError(err.message || "Błąd podczas uruchamiania nagrywania.");
+      }
+      
       setIsRecording(false);
     }
   }, []);

@@ -60,14 +60,14 @@ export function ChatPanel() {
     if (messages.length === 0) return;
     
     try {
-      const { data: cred } = await supabase
+      const { data: cred, error: credError } = await supabase
         .from("integration_credentials")
         .select("status")
         .eq("workspace_id", currentWorkspace!.id)
         .eq("provider", "notion")
         .single();
 
-      if (cred?.status !== "active") {
+      if (credError || (cred as any)?.status !== "active") {
         toast.error("Integracja z Notion nie jest aktywna.");
         return;
       }

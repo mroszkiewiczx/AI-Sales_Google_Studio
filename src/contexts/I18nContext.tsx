@@ -4,7 +4,7 @@ import { Locale, getTranslator, getFormatter, formatCurrency as formatCurrencyFn
 interface I18nContextType {
   locale: Locale;
   setLocale: (locale: Locale) => void;
-  t: (key: string) => string;
+  t: (key: string, params?: Record<string, any>) => string;
   formatDate: (date: Date | string, options?: Intl.DateTimeFormatOptions) => string;
   formatNumber: (value: number, options?: Intl.NumberFormatOptions) => string;
   formatCurrency: (value: number, options?: FormatCurrencyOptions) => string;

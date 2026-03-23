@@ -1,120 +1,118 @@
+// src/components/client360/ScoringPanel.tsx
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sparkles, TrendingUp, AlertTriangle, Lightbulb, RefreshCw } from "lucide-react";
+import { TrendingUp, Loader2, Sparkles, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useClient360Score } from "@/hooks/useClient360";
-import { motion } from "motion/react";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
+import { cn } from "@/lib/utils";
 
-export function ScoringPanel({ score, accountId }: { score: any, accountId: string }) {
-  const { generateScore } = useClient360Score(accountId);
-  const currentScore = score?.score || 0;
+interface ScoringPanelProps {
+  accountId: string;
+  lastScore?: any;
+}
+
+export function ScoringPanel({ accountId, lastScore }: ScoringPanelProps) {
+  const { currentWorkspace: workspace } = useWorkspace();
+  const { mutate: generateScore, isPending } = useClient360Score(workspace?.id);
+
+  const probability = lastScore?.win_probability || 0;
+  
+  const getColor = (prob: number) => {
+    if (prob >= 70) return "text-emerald-500 stroke-emerald-500";
+    if (prob >= 40) return "text-amber-500 stroke-amber-500";
+    return "text-rose-500 stroke-rose-500";
+  };
+
+  const getBgColor = (prob: number) => {
+    if (prob >= 70) return "bg-emerald-500/10";
+    if (prob >= 40) return "bg-amber-500/10";
+    return "bg-rose-500/10";
+  };
 
   return (
-    <Card className="shadow-sm border-border bg-primary/5">
-      <CardHeader className="p-4 flex flex-row items-center justify-between space-y-0">
+    <Card className="shadow-sm border-border overflow-hidden">
+      <CardHeader className="p-4 border-b border-border flex flex-row items-center justify-between space-y-0">
         <CardTitle className="text-sm font-medium flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-primary" />
-          Scoring AI 360°
+          <TrendingUp className="h-4 w-4" />
+          AI Scoring
         </CardTitle>
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={generateScore}>
-          <RefreshCw className="h-3.5 w-3.5" />
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="h-8 gap-2 text-xs" 
+          onClick={() => generateScore({ accountId })}
+          disabled={isPending}
+        >
+          {isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+          Odśwież
         </Button>
       </CardHeader>
-      <CardContent className="p-4 pt-0 space-y-6">
-        <div className="flex flex-col items-center justify-center py-4">
+      <CardContent className="p-4 space-y-6">
+        <div className="flex flex-col items-center justify-center space-y-2 py-4">
           <div className="relative h-32 w-32">
-            <svg className="h-full w-full" viewBox="0 0 100 100">
+            {/* SVG Ring */}
+            <svg className="h-full w-full -rotate-90" viewBox="0 0 100 100">
               <circle
-                className="text-muted-foreground/20 stroke-current"
+                className="stroke-muted fill-none"
                 strokeWidth="8"
                 cx="50"
                 cy="50"
                 r="40"
-                fill="transparent"
               />
-              <motion.circle
-                className="text-primary stroke-current"
+              <circle
+                className={cn("fill-none transition-all duration-1000", getColor(probability))}
                 strokeWidth="8"
+                strokeDasharray={2 * Math.PI * 40}
+                strokeDashoffset={2 * Math.PI * 40 * (1 - probability / 100)}
                 strokeLinecap="round"
                 cx="50"
                 cy="50"
                 r="40"
-                fill="transparent"
-                initial={{ strokeDasharray: "0 251.2" }}
-                animate={{ strokeDasharray: `${(currentScore / 100) * 251.2} 251.2` }}
-                transition={{ duration: 1.5, ease: "easeOut" }}
-                style={{ transform: "rotate(-90deg)", transformOrigin: "50% 50%" }}
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-3xl font-bold">{currentScore}</span>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Score</span>
+              <span className="text-3xl font-bold tracking-tighter">{probability}%</span>
+              <span className="text-[10px] uppercase font-semibold text-muted-foreground">Szans</span>
             </div>
           </div>
+          <Badge className={cn("px-4 py-1", getBgColor(probability), getColor(probability).split(' ')[0])}>
+            {lastScore?.label || "Brak oceny"}
+          </Badge>
         </div>
 
-        {score ? (
-          <div className="space-y-4">
-            <div className="space-y-1">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Podsumowanie</p>
-              <p className="text-xs leading-relaxed">{score.summary}</p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-emerald-600 font-bold">
-                  <TrendingUp className="h-3 w-3" />
-                  Mocne strony
-                </div>
-                <ul className="space-y-1">
-                  {score.strengths.map((s: string, i: number) => (
-                    <li key={i} className="text-[10px] flex items-start gap-1">
-                      <span className="text-emerald-500 mt-0.5">•</span>
-                      {s}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-amber-600 font-bold">
-                  <AlertTriangle className="h-3 w-3" />
-                  Ryzyka
-                </div>
-                <ul className="space-y-1">
-                  {score.weaknesses.map((w: string, i: number) => (
-                    <li key={i} className="text-[10px] flex items-start gap-1">
-                      <span className="text-amber-500 mt-0.5">•</span>
-                      {w}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-
-            <div className="space-y-2 p-3 rounded-lg bg-primary/10 border border-primary/20">
-              <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-primary font-bold">
-                <Lightbulb className="h-3 w-3" />
-                Rekomendacje
-              </div>
-              <ul className="space-y-1">
-                {score.recommendations.map((r: string, i: number) => (
-                  <li key={i} className="text-[10px] flex items-start gap-1">
-                    <span className="text-primary mt-0.5">•</span>
-                    {r}
-                  </li>
-                ))}
-              </ul>
-            </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <p className="text-[10px] font-bold uppercase text-muted-foreground flex items-center gap-1">
+              <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+              Akcje
+            </p>
+            <ul className="space-y-1">
+              {lastScore?.actions?.map((action: string, i: number) => (
+                <li key={i} className="text-[11px] leading-tight text-muted-foreground">• {action}</li>
+              )) || <li className="text-[11px] text-muted-foreground italic">Brak rekomendacji</li>}
+            </ul>
           </div>
-        ) : (
-          <div className="text-center py-4 space-y-2">
-            <p className="text-xs text-muted-foreground italic">Brak aktualnej analizy AI dla tego klienta.</p>
-            <Button variant="outline" size="sm" className="h-8 gap-2" onClick={generateScore}>
-              <Sparkles className="h-3.5 w-3.5" />
-              Generuj Analizę
-            </Button>
+          <div className="space-y-2">
+            <p className="text-[10px] font-bold uppercase text-muted-foreground flex items-center gap-1">
+              <AlertTriangle className="h-3 w-3 text-rose-500" />
+              Ryzyka
+            </p>
+            <ul className="space-y-1">
+              {lastScore?.risks?.map((risk: string, i: number) => (
+                <li key={i} className="text-[11px] leading-tight text-muted-foreground">• {risk}</li>
+              )) || <li className="text-[11px] text-muted-foreground italic">Brak ryzyk</li>}
+            </ul>
           </div>
-        )}
+        </div>
       </CardContent>
     </Card>
+  );
+}
+
+function Badge({ children, className }: { children: React.ReactNode, className?: string }) {
+  return (
+    <div className={cn("inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2", className)}>
+      {children}
+    </div>
   );
 }

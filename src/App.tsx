@@ -26,8 +26,12 @@ import AiCeoPage from "./pages/AiCeo";
 import { AiSalesInfoPage } from "./pages/AiSalesInfo";
 import { OrgAnalysisPage } from "./pages/OrgAnalysis";
 import { TranscriptionPage } from "./pages/Transcription";
+import LeadGenPage from "./pages/LeadGen";
+import MapaPage from "./pages/Mapa";
 import GenContentPage from "./pages/GenContent";
 import GenNewsletterPage from "./pages/GenNewsletter";
+import PodcastPage from "./pages/Podcast";
+import CompBriefPage from "./pages/CompBrief";
 import Client360Page from "./pages/Client360";
 import TasksPage from "./pages/Tasks";
 import RoiPage from "./pages/Roi";
@@ -36,6 +40,8 @@ import WdrozeniePage from "./pages/Wdrozenie";
 import ProgramowaniePage from "./pages/Programowanie";
 import SprzetPage from "./pages/Sprzet";
 import OfertaSumPage from "./pages/OfertaSum";
+import GenDocsPage from "./pages/GenDocs";
+import TemplatesPage from "./pages/Templates";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -60,8 +66,12 @@ function AppShell() {
               <Route path="/org-analysis" element={<OrgAnalysisPage />} />
               <Route path="/org-analysis/:id" element={<OrgAnalysisPage />} />
               <Route path="/transcription" element={<TranscriptionPage />} />
+              <Route path="/lead-gen" element={<LeadGenPage />} />
+              <Route path="/mapa" element={<MapaPage />} />
               <Route path="/gen-content" element={<GenContentPage />} />
               <Route path="/gen-newsletter" element={<GenNewsletterPage />} />
+              <Route path="/podcast" element={<PodcastPage />} />
+              <Route path="/comp-brief" element={<CompBriefPage />} />
               <Route path="/client360" element={<Client360Page />} />
               <Route path="/client360/:accountId" element={<Client360Page />} />
               <Route path="/tasks" element={<TasksPage />} />
@@ -72,6 +82,8 @@ function AppShell() {
               <Route path="/sprzet" element={<SprzetPage />} />
               <Route path="/oferta-sum" element={<OfertaSumPage />} />
               <Route path="/oferta-sum/:summaryId" element={<OfertaSumPage />} />
+              <Route path="/gen-docs" element={<GenDocsPage />} />
+              <Route path="/templates" element={<TemplatesPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>

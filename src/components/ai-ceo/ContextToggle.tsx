@@ -36,7 +36,7 @@ export function ContextToggle({ activeContexts, onToggle }: Props) {
     enabled: !!currentWorkspace?.id,
   });
 
-  const activeProviders = activeCreds?.map(c => c.provider) || [];
+  const activeProviders = (activeCreds as any[])?.map(c => c.provider) || [];
 
   return (
     <div className="flex flex-wrap gap-2 p-4 bg-muted/30 rounded-lg border">

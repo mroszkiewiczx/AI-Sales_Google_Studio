@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 
 const ACCEPTED_MIME = [
-  "audio/*", "video/*", ".mp3", ".wav", ".m4a", ".mp4", ".mov"
+  "audio/mpeg", "audio/mp3", "audio/wav", "audio/x-wav", "audio/ogg", "audio/webm", 
+  "audio/aac", "audio/flac", "audio/m4a", "audio/x-m4a", "audio/mpga",
+  "video/mp4", "video/mpeg", "video/webm", "video/quicktime", ".mp3", ".wav", ".m4a", ".mp4", ".mov", ".ogg", ".webm", ".aac", ".flac", ".mpeg", ".mpga"
 ];
 const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB
 

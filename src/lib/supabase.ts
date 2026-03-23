@@ -13,14 +13,18 @@ export const getSupabase = (): SupabaseClient => {
 
     // In AI Studio preview, we point functions to our own Express server
     const functionsUrl = window.location.origin + "/functions/v1";
+    console.log("Initializing Supabase with functionsUrl:", functionsUrl);
 
     supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
       global: {
         headers: {
           "x-user-id": "00000000-0000-0000-0000-000000000000" // Mock user ID for demo
         }
+      },
+      functions: {
+        url: functionsUrl
       }
-    });
+    } as any);
   }
   return supabaseInstance;
 };
@@ -29,6 +33,11 @@ export const getSupabase = (): SupabaseClient => {
 // Since I just created the code, I'll update the calls in the hooks.
 export const supabase = new Proxy({} as SupabaseClient, {
   get: (target, prop) => {
-    return (getSupabase() as any)[prop];
+    const instance = getSupabase();
+    const value = (instance as any)[prop];
+    if (typeof value === 'function') {
+      return value.bind(instance);
+    }
+    return value;
   }
 });

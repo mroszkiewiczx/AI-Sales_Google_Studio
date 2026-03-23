@@ -11,4 +11,7 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: true,
     storageKey: "salesos-auth",
   },
-});
+  functions: {
+    url: `${window.location.origin}/functions/v1`,
+  },
+} as any);

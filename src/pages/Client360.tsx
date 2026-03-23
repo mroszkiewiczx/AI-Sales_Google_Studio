@@ -1,89 +1,111 @@
-import { useState } from "react";
-import { useParams } from "react-router-dom";
-import { useClient360 } from "@/hooks/useClient360";
-import { AccountSearch } from "@/components/client360/AccountSearch";
-import { AccountCard } from "@/components/client360/AccountCard";
-import { ScoringPanel } from "@/components/client360/ScoringPanel";
+// src/pages/Client360.tsx
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
+import { useClient360, useAccountSearch } from "@/hooks/useClient360";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CallHistory } from "@/components/client360/CallHistory";
-import { EmailHistory } from "@/components/client360/EmailHistory";
-import { TaskHistory } from "@/components/client360/TaskHistory";
-import { AiAnalyses } from "@/components/client360/AiAnalyses";
-import { DealsList } from "@/components/client360/DealsList";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Search, Users2, Mail, Phone, Calendar, FileText, TrendingUp, Building2, ExternalLink, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ScoringPanel } from "@/components/client360/ScoringPanel";
+import { AccountCard } from "@/components/client360/AccountCard";
+import { PipelineMini } from "@/components/client360/PipelineMini";
+import { HistoryTabs } from "@/components/client360/HistoryTabs";
 
-export default function Client360Page() {
+export default function Client360() {
   const { accountId } = useParams();
-  const { data, loading } = useClient360(accountId);
-  const [activeTab, setActiveTab] = useState("calls");
+  const navigate = useNavigate();
+  const { currentWorkspace: workspace } = useWorkspace();
+  const [searchTerm, setSearchTerm] = useState("");
+  
+  const { data: searchResults, isLoading: isSearching } = useAccountSearch(searchTerm, workspace?.id);
+  const { data: clientData, isLoading: isDataLoading } = useClient360(accountId, workspace?.id);
+
+  const handleAccountSelect = (id: string) => {
+    setSearchTerm("");
+    navigate(`/client360/${id}`);
+  };
 
   return (
-    <div className="flex h-full overflow-hidden">
-      {/* Left Column: 400px */}
-      <div className="w-[400px] border-r border-border bg-muted/30 flex flex-col h-full">
-        <div className="p-4 border-b border-border">
-          <AccountSearch />
+    <div className="flex h-[calc(100vh-4rem)] bg-background">
+      {/* Lewa kolumna: Wyszukiwanie i Podsumowanie */}
+      <div className="w-[380px] border-r border-border flex flex-col bg-muted/10">
+        <div className="p-4 border-b border-border space-y-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Szukaj klienta..."
+              className="pl-9"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            {searchTerm.length >= 2 && (
+              <Card className="absolute top-full left-0 right-0 mt-1 z-50 shadow-lg">
+                <CardContent className="p-2">
+                  {isSearching ? (
+                    <div className="flex items-center justify-center p-4">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    </div>
+                  ) : searchResults?.length === 0 ? (
+                    <p className="text-xs text-center p-4 text-muted-foreground">Nie znaleziono klientów</p>
+                  ) : (
+                    <div className="space-y-1">
+                      {searchResults?.map((acc) => (
+                        <Button
+                          key={acc.id}
+                          variant="ghost"
+                          className="w-full justify-start text-left text-sm h-auto py-2"
+                          onClick={() => handleAccountSelect(acc.id)}
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-medium">{acc.name}</span>
+                            <span className="text-[10px] text-muted-foreground">{acc.city || "Brak miasta"}</span>
+                          </div>
+                        </Button>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
-          {accountId ? (
-            loading ? (
-              <div className="space-y-6">
-                <Skeleton className="h-[200px] w-full" />
-                <Skeleton className="h-[300px] w-full" />
-              </div>
-            ) : (
-              <>
-                <AccountCard account={data?.account} contacts={data?.contacts} />
-                <ScoringPanel score={data?.score} accountId={accountId} />
-              </>
-            )
-          ) : (
-            <div className="flex flex-col items-center justify-center h-full text-center p-8 space-y-4">
-              <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
-                <AccountSearch className="h-6 w-6 text-muted-foreground" />
-              </div>
+          {!accountId ? (
+            <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-50">
+              <Users2 className="h-12 w-12 text-muted-foreground" />
               <div className="space-y-1">
                 <p className="text-sm font-medium">Wybierz klienta</p>
-                <p className="text-xs text-muted-foreground">Wyszukaj firmę, aby zobaczyć pełną historię i analizę 360°</p>
+                <p className="text-xs text-muted-foreground">Wyszukaj firmę, aby zobaczyć widok 360°</p>
               </div>
             </div>
+          ) : isDataLoading ? (
+            <div className="h-full flex items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <>
+              <AccountCard account={clientData?.account} contact={clientData?.contacts?.find((c: any) => c.is_primary)} />
+              <ScoringPanel accountId={accountId} lastScore={clientData?.lastScore} />
+              <PipelineMini stats={clientData?.pipeline} />
+            </>
           )}
         </div>
       </div>
 
-      {/* Right Column: flex-1 */}
-      <div className="flex-1 flex flex-col h-full bg-background">
-        {accountId && data ? (
-          <div className="flex-1 flex flex-col">
-            <div className="p-6 border-b border-border">
-              <h1 className="text-2xl font-bold tracking-tight">{data.account.name}</h1>
-              <p className="text-sm text-muted-foreground">{data.account.industry} • {data.account.size}</p>
-            </div>
-
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-              <div className="px-6 border-b border-border">
-                <TabsList className="h-12 bg-transparent p-0 gap-6">
-                  <TabsTrigger value="calls" className="h-12 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-0">Historia Rozmów</TabsTrigger>
-                  <TabsTrigger value="emails" className="h-12 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-0">E-maile</TabsTrigger>
-                  <TabsTrigger value="tasks" className="h-12 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-0">Zadania</TabsTrigger>
-                  <TabsTrigger value="ai" className="h-12 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-0">Analizy AI</TabsTrigger>
-                  <TabsTrigger value="deals" className="h-12 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-0">Szanse (Deals)</TabsTrigger>
-                </TabsList>
-              </div>
-
-              <div className="flex-1 overflow-y-auto p-6">
-                <TabsContent value="calls" className="m-0"><CallHistory history={data.history.calls} /></TabsContent>
-                <TabsContent value="emails" className="m-0"><EmailHistory history={data.history.emails} /></TabsContent>
-                <TabsContent value="tasks" className="m-0"><TaskHistory history={data.history.tasks} /></TabsContent>
-                <TabsContent value="ai" className="m-0"><AiAnalyses score={data.score} /></TabsContent>
-                <TabsContent value="deals" className="m-0"><DealsList deals={data.deals} /></TabsContent>
-              </div>
-            </Tabs>
-          </div>
+      {/* Prawa kolumna: Historia i Detale */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {accountId && !isDataLoading ? (
+          <HistoryTabs data={clientData} />
         ) : (
-          <div className="flex-1 flex items-center justify-center text-muted-foreground">
-            Wybierz klienta z listy po lewej stronie
+          <div className="flex-1 flex items-center justify-center bg-muted/5">
+            <div className="text-center space-y-2">
+              <Building2 className="h-12 w-12 text-muted-foreground mx-auto opacity-20" />
+              <p className="text-sm text-muted-foreground">Widok historii i analiz pojawi się po wybraniu klienta</p>
+            </div>
           </div>
         )}
       </div>

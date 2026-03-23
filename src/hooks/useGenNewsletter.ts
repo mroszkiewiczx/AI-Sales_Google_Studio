@@ -71,7 +71,7 @@ export function useNewsletterTemplates() {
   const query = useQuery({
     queryKey: ['newsletter-templates', currentWorkspace?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('newsletter_templates')
         .select('*')
         .eq('workspace_id', currentWorkspace!.id)
@@ -84,7 +84,7 @@ export function useNewsletterTemplates() {
 
   const saveTemplate = useMutation({
     mutationFn: async (template: Partial<NewsletterTemplate>) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('newsletter_templates')
         .upsert({ ...template, workspace_id: currentWorkspace!.id, updated_at: new Date().toISOString() })
         .select()

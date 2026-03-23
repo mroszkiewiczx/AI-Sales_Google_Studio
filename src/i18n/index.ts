@@ -11,14 +11,22 @@ type DeepKeys<T, Prefix extends string = ""> = T extends Record<string, unknown>
 const translations = { pl, en } as const;
 
 export function getTranslator(locale: Locale) {
-  return function t(key: string): string {
+  return function t(key: string, params?: Record<string, any>): string {
     const keys = key.split(".");
     let obj: Record<string, unknown> = translations[locale] as any;
     for (const k of keys) {
       if (obj == null) return key;
       obj = (obj as any)[k];
     }
-    return typeof obj === "string" ? obj : key;
+    if (typeof obj !== "string") return key;
+    
+    let result = obj as string;
+    if (params) {
+      Object.entries(params).forEach(([k, v]) => {
+        result = result.replace(`{${k}}`, String(v));
+      });
+    }
+    return result;
   };
 }
 

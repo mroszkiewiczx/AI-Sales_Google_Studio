@@ -1,19 +1,65 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Settings2, Sparkles } from "lucide-react";
+import { Settings2, Sparkles, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { supabase } from "@/integrations/supabase/client";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
+import { toast } from "sonner";
 
 export function TranscriptConfig() {
+  const { currentWorkspace: workspace } = useWorkspace();
   const [model, setModel] = useState("whisper-1");
   const [language, setLanguage] = useState("pl");
   const [diarize, setDiarize] = useState(true);
   const [timestamps, setTimestamps] = useState(true);
   const [prompt, setPrompt] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    if (workspace?.id) {
+      const fetchPrompt = async () => {
+        const { data } = await supabase
+          .from("ai_prompts")
+          .select("prompt_text")
+          .eq("workspace_id", workspace.id)
+          .eq("module", "transcription")
+          .single();
+        
+        if (data) setPrompt(data.prompt_text);
+      };
+      fetchPrompt();
+    }
+  }, [workspace?.id]);
+
+  const savePrompt = async () => {
+    if (!workspace?.id) return;
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from("ai_prompts")
+        .upsert({
+          workspace_id: workspace.id,
+          module: "transcription",
+          prompt_text: prompt,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'workspace_id,module' });
+
+      if (error) throw error;
+      toast.success("Prompt zapisany");
+      setIsOpen(false);
+    } catch (err) {
+      console.error("Save prompt error:", err);
+      toast.error("Błąd podczas zapisywania promptu");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <Card className="shadow-sm border-border">
@@ -22,7 +68,7 @@ export function TranscriptConfig() {
           <Settings2 className="h-4 w-4" />
           Konfiguracja
         </CardTitle>
-        <Dialog>
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
             <Button variant="outline" size="sm" className="h-8 gap-2">
               <Sparkles className="h-3.5 w-3.5" />
@@ -38,13 +84,16 @@ export function TranscriptConfig() {
                 <Label htmlFor="prompt">Instrukcje dla AI</Label>
                 <Textarea
                   id="prompt"
-                  placeholder="Np. Usuń przerywniki, sformatuj jako dialog, zachowaj styl biznesowy..."
+                  placeholder="Opisz styl, branżę, mówców (np. Jan Kowalski - Prowadzący, Anna Nowak - Klient)..."
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   className="min-h-[150px]"
                 />
               </div>
-              <Button onClick={() => console.log("Save prompt to Firestore", prompt)}>Zapisz Prompt</Button>
+              <Button onClick={savePrompt} disabled={isSaving}>
+                {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Zapisz Prompt
+              </Button>
             </div>
           </DialogContent>
         </Dialog>

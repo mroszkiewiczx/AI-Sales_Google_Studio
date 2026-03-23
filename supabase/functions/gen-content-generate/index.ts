@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { data: isMember } = await userClient.rpc("is_workspace_member", { ws_id: workspace_id });
+    const { data: isMember } = await userClient.rpc("is_workspace_member", { target_workspace_id: workspace_id });
     if (!isMember) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -62,7 +62,7 @@ Zwróć WYŁĄCZNIE czysty JSON w formacie: { "variant1": "treść 1", "variant2
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
+          model: "google/gemini-2.0-flash-001",
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: `Treść bazowa: ${base_content || "brak"}` }

@@ -1,105 +1,66 @@
-import { useState, useEffect } from "react";
-import { db } from "@/firebase";
-import { collection, query, where, getDocs, doc, getDoc, onSnapshot, limit } from "firebase/firestore";
-import { useWorkspace } from "@/contexts/WorkspaceContext";
-import { useQuery } from "@tanstack/react-query";
+// src/hooks/useClient360.ts
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
-export function useAccountSearch(searchTerm: string) {
-  const { currentWorkspace } = useWorkspace();
-
+export function useAccountSearch(searchTerm: string, workspaceId?: string) {
   return useQuery({
-    queryKey: ["accounts", currentWorkspace?.id, searchTerm],
+    queryKey: ["accounts", "search", searchTerm, workspaceId],
     queryFn: async () => {
-      if (!currentWorkspace || !searchTerm) return [];
+      if (!workspaceId || searchTerm.length < 2) return [];
       
-      const q = query(
-        collection(db, "workspaces", currentWorkspace.id, "accounts"),
-        where("name", ">=", searchTerm),
-        where("name", "<=", searchTerm + "\uf8ff"),
-        limit(10)
-      );
-      
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const { data, error } = await (supabase as any)
+        .from("accounts")
+        .select("*")
+        .eq("workspace_id", workspaceId)
+        .ilike("name", `%${searchTerm}%`)
+        .limit(10);
+
+      if (error) throw error;
+      return data;
     },
-    enabled: !!currentWorkspace && searchTerm.length > 2
+    enabled: !!workspaceId && searchTerm.length >= 2,
   });
 }
 
-export function useClient360(accountId: string | undefined) {
-  const { currentWorkspace } = useWorkspace();
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+export function useClient360(accountId?: string, workspaceId?: string) {
+  return useQuery({
+    queryKey: ["client360", accountId, workspaceId],
+    queryFn: async () => {
+      if (!accountId || !workspaceId) return null;
+      
+      const { data, error } = await supabase.functions.invoke("client360-get", {
+        body: { account_id: accountId, workspace_id: workspaceId },
+      });
 
-  useEffect(() => {
-    if (!currentWorkspace || !accountId) {
-      setData(null);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    
-    // Fetch account details
-    const accountRef = doc(db, "workspaces", currentWorkspace.id, "accounts", accountId);
-    
-    const unsubscribe = onSnapshot(accountRef, async (snapshot) => {
-      if (snapshot.exists()) {
-        const accountData = { id: snapshot.id, ...snapshot.data() };
-        
-        // Fetch contacts
-        const contactsQ = query(collection(db, "workspaces", currentWorkspace.id, "contacts"), where("accountId", "==", accountId));
-        const contactsSnap = await getDocs(contactsQ);
-        const contacts = contactsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-        
-        // Fetch deals
-        const dealsQ = query(collection(db, "workspaces", currentWorkspace.id, "deals"), where("accountId", "==", accountId));
-        const dealsSnap = await getDocs(dealsQ);
-        const deals = dealsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-        
-        // Fetch score
-        const scoreQ = query(collection(db, "workspaces", currentWorkspace.id, "client360_scores"), where("accountId", "==", accountId), limit(1));
-        const scoreSnap = await getDocs(scoreQ);
-        const score = scoreSnap.docs[0]?.data() || null;
-
-        setData({
-          account: accountData,
-          contacts,
-          deals,
-          score,
-          history: {
-            calls: [],
-            emails: [],
-            tasks: []
-          }
-        });
-      }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [currentWorkspace, accountId]);
-
-  return { data, loading };
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!accountId && !!workspaceId,
+  });
 }
 
-export function useClient360Score(accountId: string | undefined) {
-  const { currentWorkspace } = useWorkspace();
+export function useClient360Score(workspaceId?: string) {
+  const queryClient = useQueryClient();
 
-  const generateScore = async () => {
-    if (!currentWorkspace || !accountId) return;
-    
-    // Mocking AI scoring logic
-    console.log("Generating AI score for account:", accountId);
-    toast.info("Generowanie analizy AI...");
-    
-    // In a real app, this would call a Cloud Function
-    setTimeout(() => {
-      toast.success("Analiza zakończona");
-    }, 2000);
-  };
+  return useMutation({
+    mutationFn: async ({ accountId }: { accountId: string }) => {
+      if (!workspaceId) throw new Error("Workspace ID required");
 
-  return { generateScore };
+      const { data, error } = await supabase.functions.invoke("client360-score", {
+        body: { account_id: accountId, workspace_id: workspaceId },
+      });
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, { accountId }) => {
+      queryClient.invalidateQueries({ queryKey: ["client360", accountId] });
+      toast.success("Scoring wygenerowany pomyślnie");
+    },
+    onError: (error) => {
+      console.error("Scoring error:", error);
+      toast.error("Błąd podczas generowania scoringu");
+    },
+  });
 }
-
-import { toast } from "sonner";

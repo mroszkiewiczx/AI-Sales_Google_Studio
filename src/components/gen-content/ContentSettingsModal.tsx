@@ -27,7 +27,8 @@ const LANGUAGES = [
 
 export function ContentSettingsModal({ open, onOpenChange }: ContentSettingsModalProps) {
   const { t } = useI18n();
-  const { data: settings, updateSettings, isPending: isUpdating } = useContentSettings();
+  const { data: settings, updateSettings } = useContentSettings();
+  const isUpdating = updateSettings.isPending;
   
   const [tone, setTone] = useState("Profesjonalny");
   const [goal, setGoal] = useState("Edukacja");

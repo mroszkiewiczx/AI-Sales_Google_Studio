@@ -4,8 +4,8 @@ import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { useI18n } from "@/contexts/I18nContext";
 import {
   LayoutDashboard, Terminal, Mail, Bell, BarChart3,
-  Settings, LogOut, ChevronDown, Brain, Headphones, Building2, Mic, CheckSquare, Users,
-  Calculator, CreditCard, Wrench, Code2, Server, FileText, Sparkles, Newspaper
+  Settings, LogOut, ChevronDown, Brain, Headphones, Building2, Mic, CheckSquare, Users2,
+  Calculator, CreditCard, Wrench, Code2, Server, FileText, Sparkles, Newspaper, Podcast, Search, MapPin, Library
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -22,16 +22,22 @@ const navItems = [
   { path: "/ai-ceo", icon: Brain, labelKey: "nav.aiCeo" },
   { path: "/ai-sales-info", icon: Headphones, labelKey: "nav.aiSalesInfo" },
   { path: "/org-analysis", icon: Building2, labelKey: "nav.orgAnalysis" },
-  { path: "/client360", icon: Users, labelKey: "nav.client360" },
+  { path: "/client360", icon: Users2, labelKey: "nav.client360" },
   { path: "/transcription", icon: Mic, labelKey: "nav.transcription" },
+  { path: "/lead-gen", icon: Search, labelKey: "nav.leadGen" },
+  { path: "/mapa", icon: MapPin, labelKey: "nav.mapa" },
   { path: "/gen-content", icon: Sparkles, labelKey: "nav.genContent" },
   { path: "/gen-newsletter", icon: Newspaper, labelKey: "nav.genNewsletter" },
+  { path: "/podcast", icon: Podcast, labelKey: "nav.podcast" },
+  { path: "/comp-brief", icon: Search, labelKey: "nav.compBrief" },
   { path: "/roi", icon: Calculator, labelKey: "nav.roi" },
   { path: "/licencje", icon: CreditCard, labelKey: "nav.licencje" },
   { path: "/wdrozenie", icon: Wrench, labelKey: "nav.wdrozenie" },
   { path: "/programowanie", icon: Code2, labelKey: "nav.programowanie" },
   { path: "/sprzet", icon: Server, labelKey: "nav.sprzet" },
   { path: "/oferta-sum", icon: FileText, labelKey: "nav.ofertaSum" },
+  { path: "/gen-docs", icon: Sparkles, labelKey: "nav.genDocs" },
+  { path: "/templates", icon: Library, labelKey: "nav.templates" },
 ];
 
 export function AppSidebar() {
