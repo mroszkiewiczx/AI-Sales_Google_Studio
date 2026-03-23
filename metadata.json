@@ -1,0 +1,5 @@
+{
+  "name": "SalesOS v2",
+  "description": "Wielomodułowa aplikacja SaaS dla zespołów sprzedażowych z AI.",
+  "requestFramePermissions": ["microphone"]
+}

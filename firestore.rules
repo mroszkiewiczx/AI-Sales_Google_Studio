@@ -1,0 +1,161 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: profiles
+    // Document ID: userId
+    // Fields:
+    //   - displayName: string (required)
+    //   - email: string (required, email format)
+    //   - role: string (required, enum: ['admin', 'user'])
+    //
+    // Collection: workspaces
+    // Document ID: workspaceId
+    // Fields:
+    //   - name: string (required)
+    //   - slug: string (required)
+    //   - ownerId: string (required)
+    //   - createdAt: timestamp (required)
+    //
+    // Collection: workspaces/{workspaceId}/deals
+    // Document ID: dealId
+    // Fields:
+    //   - title: string (required)
+    //   - amount: number (required)
+    //   - stage: string (required, enum)
+    //   - workspaceId: string (required)
+    //   - ownerId: string (required)
+    //   - createdAt: timestamp (required)
+    //   - updatedAt: timestamp (required)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "mateusz.roszkiewicz@optimakers.pl"));
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+    function isValidProfile(data) {
+      return data.displayName is string && data.displayName.size() > 0 && data.displayName.size() < 100 &&
+             isValidEmail(data.email) &&
+             data.role in ['admin', 'user'];
+    }
+
+    function isValidWorkspace(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.slug is string && data.slug.size() > 0 && data.slug.size() < 50 &&
+             data.ownerId is string &&
+             data.members is list &&
+             data.createdAt is timestamp;
+    }
+
+    function isMember(workspaceId) {
+      return isAuthenticated() && (
+        get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.members.hasAny([request.auth.uid]) ||
+        isAdmin()
+      );
+    }
+
+    function isValidDeal(data) {
+      return data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             data.amount is number &&
+             data.stage in ['prospecting', 'qualification', 'proposal', 'negotiation', 'closed_won', 'closed_lost'] &&
+             data.workspaceId is string &&
+             data.ownerId is string &&
+             data.createdAt is timestamp &&
+             data.updatedAt is timestamp;
+    }
+
+    function isValidAccount(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() < 200 &&
+             data.workspaceId is string;
+    }
+
+    function isValidContact(data) {
+      return data.firstName is string && data.firstName.size() > 0 && data.firstName.size() < 100 &&
+             data.lastName is string && data.lastName.size() > 0 && data.lastName.size() < 100 &&
+             data.accountId is string &&
+             data.workspaceId is string;
+    }
+
+    function isValidScore(data) {
+      return data.accountId is string &&
+             data.score is number && data.score >= 0 && data.score <= 100 &&
+             data.workspaceId is string;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+    match /profiles/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isOwner(userId) && isValidProfile(request.resource.data) && (request.resource.data.role == 'user' || isAdmin());
+      allow update: if (isOwner(userId) || isAdmin()) && isValidProfile(request.resource.data) && (request.resource.data.role == resource.data.role || isAdmin());
+    }
+
+    match /workspaces/{workspaceId} {
+      allow read: if isMember(workspaceId);
+      allow create: if isAuthenticated() && isValidWorkspace(request.resource.data) && request.resource.data.ownerId == request.auth.uid && request.resource.data.members.hasAny([request.auth.uid]);
+      allow update: if (resource.data.ownerId == request.auth.uid || isAdmin()) && isValidWorkspace(request.resource.data);
+      allow delete: if (resource.data.ownerId == request.auth.uid || isAdmin());
+
+      match /deals/{dealId} {
+        allow read: if isMember(workspaceId);
+        allow create: if isMember(workspaceId) && isValidDeal(request.resource.data) && request.resource.data.workspaceId == workspaceId;
+        allow update: if isMember(workspaceId) && isValidDeal(request.resource.data);
+        allow delete: if (resource.data.ownerId == request.auth.uid || isAdmin());
+      }
+
+      match /accounts/{accountId} {
+        allow read: if isMember(workspaceId);
+        allow create: if isMember(workspaceId) && isValidAccount(request.resource.data) && request.resource.data.workspaceId == workspaceId;
+        allow update: if isMember(workspaceId) && isValidAccount(request.resource.data);
+        allow delete: if isAdmin();
+      }
+
+      match /contacts/{contactId} {
+        allow read: if isMember(workspaceId);
+        allow create: if isMember(workspaceId) && isValidContact(request.resource.data) && request.resource.data.workspaceId == workspaceId;
+        allow update: if isMember(workspaceId) && isValidContact(request.resource.data);
+        allow delete: if isAdmin();
+      }
+
+      match /client360_scores/{scoreId} {
+        allow read: if isMember(workspaceId);
+        allow create: if isMember(workspaceId) && isValidScore(request.resource.data) && request.resource.data.workspaceId == workspaceId;
+        allow update: if isMember(workspaceId) && isValidScore(request.resource.data);
+        allow delete: if isAdmin();
+      }
+    }
+
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}

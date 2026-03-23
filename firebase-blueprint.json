@@ -1,0 +1,227 @@
+{
+  "entities": {
+    "Workspace": {
+      "title": "Workspace",
+      "description": "A business workspace containing deals and users",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "The name of the workspace" },
+        "slug": { "type": "string", "description": "Unique identifier for the workspace URL" },
+        "ownerId": { "type": "string", "description": "UID of the workspace owner" },
+        "members": { "type": "array", "items": { "type": "string" }, "description": "List of member UIDs" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "slug", "ownerId", "members"]
+    },
+    "Deal": {
+      "title": "Deal",
+      "description": "A sales opportunity",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "amount": { "type": "number" },
+        "stage": { "type": "string", "enum": ["prospecting", "qualification", "proposal", "negotiation", "closed_won", "closed_lost"] },
+        "workspaceId": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "accountId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "amount", "stage", "workspaceId", "ownerId"]
+    },
+    "Profile": {
+      "title": "Profile",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "displayName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["admin", "user"] }
+      },
+      "required": ["displayName", "email"]
+    },
+    "Account": {
+      "title": "Account",
+      "description": "A client company or organization.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "domain": { "type": "string" },
+        "industry": { "type": "string" },
+        "size": { "type": "string" },
+        "website": { "type": "string" },
+        "logo_url": { "type": "string" },
+        "workspaceId": { "type": "string" }
+      },
+      "required": ["name", "workspaceId"]
+    },
+    "Contact": {
+      "title": "Contact",
+      "description": "A person associated with an account.",
+      "type": "object",
+      "properties": {
+        "accountId": { "type": "string" },
+        "firstName": { "type": "string" },
+        "lastName": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "jobTitle": { "type": "string" },
+        "linkedinUrl": { "type": "string" },
+        "workspaceId": { "type": "string" }
+      },
+      "required": ["accountId", "firstName", "lastName", "workspaceId"]
+    },
+    "Client360Score": {
+      "title": "Client360Score",
+      "description": "AI-driven scoring and analysis for an account.",
+      "type": "object",
+      "properties": {
+        "accountId": { "type": "string" },
+        "score": { "type": "number" },
+        "summary": { "type": "string" },
+        "strengths": { "type": "array", "items": { "type": "string" } },
+        "weaknesses": { "type": "array", "items": { "type": "string" } },
+        "recommendations": { "type": "array", "items": { "type": "string" } },
+        "workspaceId": { "type": "string" }
+      },
+      "required": ["accountId", "score", "workspaceId"]
+    },
+    "RoiCalculation": {
+      "title": "RoiCalculation",
+      "description": "Results of an ROI calculation",
+      "type": "object",
+      "properties": {
+        "workspaceId": { "type": "string" },
+        "dealId": { "type": "string" },
+        "accountId": { "type": "string" },
+        "employees": { "type": "number" },
+        "hourlyRate": { "type": "number" },
+        "wasteMinutes": { "type": "number" },
+        "inventoryValue": { "type": "number" },
+        "inventoryOptPct": { "type": "number" },
+        "annualTurnover": { "type": "number" },
+        "productionGrowthPct": { "type": "number" },
+        "licenseCost": { "type": "number" },
+        "implementationCost": { "type": "number" },
+        "licenseType": { "type": "string" },
+        "licenseYears": { "type": "number" },
+        "totalGain": { "type": "number" },
+        "paybackMonths": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["workspaceId", "totalGain", "paybackMonths"]
+    },
+    "LicenseCalculation": {
+      "title": "LicenseCalculation",
+      "description": "Results of a license price calculation",
+      "type": "object",
+      "properties": {
+        "workspaceId": { "type": "string" },
+        "dealId": { "type": "string" },
+        "accountId": { "type": "string" },
+        "billingPeriod": { "type": "string" },
+        "multiplier": { "type": "number" },
+        "totalNet": { "type": "number" },
+        "totalGross": { "type": "number" },
+        "items": { "type": "array", "items": { "type": "object" } },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["workspaceId", "totalNet", "billingPeriod"]
+    },
+    "ImplementationProduct": {
+      "title": "ImplementationProduct",
+      "description": "Products for implementation calculations",
+      "type": "object",
+      "properties": {
+        "workspace_id": { "type": "string" },
+        "hubspot_product_id": { "type": "string" },
+        "nazwa": { "type": "string" },
+        "opis": { "type": "string" },
+        "cena_bazowa": { "type": "number" },
+        "model": { "type": "string", "enum": ["Jednorazowo", "Miesięcznie", "Rocznie", "Ratalna", "Leasing"] },
+        "grupa": { "type": "string" },
+        "jednostka": { "type": "string" },
+        "sort_order": { "type": "integer" },
+        "is_active": { "type": "boolean" }
+      },
+      "required": ["workspace_id", "hubspot_product_id", "nazwa", "cena_bazowa", "model", "grupa"]
+    },
+    "ImplementationCalculation": {
+      "title": "ImplementationCalculation",
+      "description": "Saved implementation calculations",
+      "type": "object",
+      "properties": {
+        "workspace_id": { "type": "string" },
+        "created_by": { "type": "string" },
+        "deal_id": { "type": "string" },
+        "line_items": { "type": "array", "items": { "type": "object" } },
+        "suma_jdn": { "type": "number" },
+        "suma_mies": { "type": "number" },
+        "suma_rocz": { "type": "number" },
+        "is_snapshot": { "type": "boolean" }
+      },
+      "required": ["workspace_id", "created_by", "line_items"]
+    },
+    "DevCalculation": {
+      "title": "DevCalculation",
+      "description": "Saved development work calculations",
+      "type": "object",
+      "properties": {
+        "workspace_id": { "type": "string" },
+        "created_by": { "type": "string" },
+        "deal_id": { "type": "string" },
+        "hubspot_product_id": { "type": "string" },
+        "line_items": { "type": "array", "items": { "type": "object" } },
+        "total": { "type": "number" },
+        "is_snapshot": { "type": "boolean" }
+      },
+      "required": ["workspace_id", "created_by", "line_items", "total"]
+    }
+  },
+  "firestore": {
+    "/workspaces/{workspaceId}": {
+      "schema": "Workspace",
+      "description": "Workspace data"
+    },
+    "/workspaces/{workspaceId}/deals/{dealId}": {
+      "schema": "Deal",
+      "description": "Deals within a workspace"
+    },
+    "/profiles/{userId}": {
+      "schema": "Profile",
+      "description": "User profile data"
+    },
+    "/workspaces/{workspaceId}/accounts/{accountId}": {
+      "schema": "Account",
+      "description": "Client accounts"
+    },
+    "/workspaces/{workspaceId}/contacts/{contactId}": {
+      "schema": "Contact",
+      "description": "Client contacts"
+    },
+    "/workspaces/{workspaceId}/client360_scores/{scoreId}": {
+      "schema": "Client360Score",
+      "description": "Client 360 scores"
+    },
+    "/workspaces/{workspaceId}/roi_calculations/{calcId}": {
+      "schema": "RoiCalculation",
+      "description": "ROI calculations"
+    },
+    "/workspaces/{workspaceId}/license_calculations/{calcId}": {
+      "schema": "LicenseCalculation",
+      "description": "License calculations"
+    },
+    "/workspaces/{workspaceId}/implementation_products/{productId}": {
+      "schema": "ImplementationProduct",
+      "description": "Implementation products"
+    },
+    "/workspaces/{workspaceId}/implementation_calculations/{calcId}": {
+      "schema": "ImplementationCalculation",
+      "description": "Implementation calculations"
+    },
+    "/workspaces/{workspaceId}/dev_calculations/{calcId}": {
+      "schema": "DevCalculation",
+      "description": "Development work calculations"
+    }
+  }
+}
